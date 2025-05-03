@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <div class="text-center mb-4">
+    <h1 class="fw-bold text-primary">Обнаружение бездомных животных</h1>
+    <p class="text-muted">Загрузите изображение или видео, чтобы определить объекты на нём</p>
+  </div>
+
+  <div class="card shadow-lg p-4 mb-5">
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+      <div class="mb-3 text-center">
+        <label for="file-input" class="form-label fs-5">Выберите файл:</label>
+        <input type="file" name="file" id="file-input" class="form-control" required>
+      </div>
+      <div class="text-center">
+        <button class="btn btn-primary px-5" type="submit">Анализировать</button>
+      </div>
+    </form>
+
+    <!-- Индикатор загрузки -->
+    <div id="loading-spinner" class="text-center mt-3" style="display:none;">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">Обработка файла...</p>
+    </div>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card shadow-sm mb-4">
+      {% if result.type == 'image' %}
+        <img src="{{ url_for('static', filename='results/' ~ result.file) }}" class="card-img-top">
+      {% else %}
+        <video
+          id="video-player"
+          class="video-js vjs-fluid vjs-big-play-centered"
+          controls
+          preload="auto"
+          data-setup='{}'>
+          <source src="{{ url_for('serve_video', filename=result.file) }}" type="video/mp4" />
+          Ваш браузер не поддерживает воспроизведение видео.
+        </video>
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title">Обнаружено:</h5>
+        <p class="card-text">{{ result.classes | join(', ') }}</p>
+        <a href="{{ url_for('generate_report', request_id=result.id) }}" class="btn btn-outline-secondary">Скачать PDF-отчёт</a>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if history %}
+    <div class="card p-3 shadow-sm">
+      <h4 class="mb-3">История сессии</h4>
+      <ul class="list-group">
+        {% for item in history %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ item.time }} — {{ item.classes | join(', ') }}
+            <a href="{{ url_for('generate_report', request_id=item.id) }}" class="btn btn-sm btn-outline-dark">PDF</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
