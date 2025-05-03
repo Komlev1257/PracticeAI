@@ -1,0 +1,23 @@
+# Окружение виртуального Python
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Секреты и конфигурации
+.env
+*.db
+
+# Временные и лог-файлы
+*.log
+*.tmp
+.DS_Store
+static/results/
+static/uploads/
+
+# IDE файлы
+.idea/
+
+# Кэш
+.cache/
+*.egg-info/

@@ -7,7 +7,10 @@ from flask import make_response
 from moviepy import VideoFileClip
 from inference_sdk import InferenceConfiguration
 
-custom_configuration = InferenceConfiguration(confidence_threshold=0.2)
+custom_configuration = InferenceConfiguration(confidence_threshold=0.3)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'bmp', 'mp4', 'avi', 'mov', 'mkv'}
 
 def process_image(path, result_folder, client, model_id):
     with client.use_configuration(custom_configuration):
@@ -39,7 +42,6 @@ def process_video(path, result_folder, client, model_id):
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS) or 24
 
-    # 1. Временный AVI-файл
     temp_name = f"{uuid.uuid4()}.avi"
     temp_path = os.path.join(result_folder, temp_name)
     out = cv2.VideoWriter(temp_path, cv2.VideoWriter_fourcc(*'MJPG'), fps, (w, h))
@@ -72,14 +74,11 @@ def process_video(path, result_folder, client, model_id):
         os.remove(temp_path)
         raise ValueError("Видео не содержит кадров для обработки.")
 
-    # 2. Перекодируем в mp4 через moviepy
     final_name = f"{uuid.uuid4()}.mp4"
     final_path = os.path.join(result_folder, final_name)
     clip = VideoFileClip(temp_path)
     clip.write_videofile(final_path, codec="libx264", audio=False, logger=None)
     clip.close()
-
-    # 3. Удаляем временный .avi
     os.remove(temp_path)
 
     return {
@@ -119,7 +118,6 @@ def generate_pdf_report(request_id, file_type, filename, classes, timestamp):
     for cls in classes:
         pdf.cell(0, 10, f" - {cls}", ln=True)
 
-    # 🔥 Универсальная обработка: str или bytearray
     output_data = pdf.output(dest='S')
     if isinstance(output_data, str):
         pdf_bytes = output_data.encode('latin-1')
